@@ -23,7 +23,7 @@ Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 # Save reference to the tables
-Measurements = Base.classes.measurements
+Measurement = Base.classes.measurement
 Station = Base.classes.station
 #################################################
 # Flask Setup
@@ -40,11 +40,11 @@ def welcome():
     """List all available api routes."""
     return (
         f"Available Routes:<br/>"
-        f"/api/v1.0/precipitation"
-        f"/api/v1.0/stations"
-        f"/api/v1.0/tobs"
-        f"/api/v1.0/<start>"
-        f"/api/v1.0/<start>/<end>"
+        f"/api/v1.0/precipitation<br/>"
+        f"/api/v1.0/stations<br/>"
+        f"/api/v1.0/tobs<br/>"
+        f"/api/v1.0/start<br/>"
+        f"/api/v1.0/start_end"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -53,19 +53,19 @@ def names():
     session = Session(engine)
 
     """Return a list of all precipitation. Note there may be dupes - why?"""
-    # Design a query to retrieve the last 12 months of precipitation data and plot the results
+    # Design a query to retrieve the last 12 months of precipitation data
     results = session.query(Measurement.date, Measurement.prcp).\
         filter(Measurement.date > '2016-08-23').\
         order_by(Measurement.date.desc()).all()
 
     session.close()
 
-    # Convert the query results to a dictionary using `date` as the key and `prcp` as the value.
+    # Convert the query results to a dictionary using 'date' as the key and 'prcp' as the value.
     query_prcp = []
-    for prcp, date in results:
+    for date, prcp in results:
         prcp_dict = {}
-        prcp_dict["date"] = country
-        prcp_dict["prcp"] = str(prcp)
+        prcp_dict["date"] = date
+        prcp_dict["prcp"] = prcp
         query_prcp.append(prcp_dict)
 
     # Return the JSON representation of your dictionary.
@@ -73,7 +73,7 @@ def names():
 
 
 @app.route("/api/v1.0/stations")
-def names():
+def names1():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
@@ -91,7 +91,7 @@ def names():
   
 
 @app.route("/api/v1.0/tobs")
-def names():
+def names2():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
@@ -110,44 +110,36 @@ def names():
     return jsonify(all_dates)
   
   
-@app.route("/api/v1.0/<start>")
-def names():
+@app.route("/api/v1.0/start")
+def names3():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
     # When given the start only, calculate `TMIN`, `TAVG`, and `TMAX` for all dates greater than 
     # and equal to the start date.
-    def calc_temps(start_date):
-    
-    calc_temps('2017-03-01')
     
     results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-        filter(Measurement.date >= start_date).all().\
-        order_by(Measurement.date.desc()).all()
+        filter(Measurement.date >= '2017-03-01').all()
 
     session.close()
 
     # Convert list of tuples into normal list
-    start_date = list(np.ravel(results))
+    vacation_temps = list(np.ravel(results))
 
-    # Return a JSON list of the minimum temperature, 
-    # the average temperature, and the max temperature 
-    # for a given start date
-    return jsonify(start_date) 
+    # Return a JSON list of the minimum temperature, the average temperature, 
+    # and the max temperature for a given start date
+    return jsonify(vacation_temps) 
 
-@app.route("/api/v1.0/<start>/<end>")
-def names():
+@app.route("/api/v1.0/start_end")
+def names4():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
     # When given the start and the end date, calculate the 
     # `TMIN`, `TAVG`, and `TMAX` for dates between the start and end date inclusive
-    def calc_temps(start_date, end_date):
-    
-    calc_temps('2017-03-01', '2017-03-15')
     
     results = session.query(func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)).\
-        filter(Measurement.date >= start_date).filter(Measurement.date <= end_date).all()
+        filter(Measurement.date >= '2017-03-01').filter(Measurement.date <= '2017-03-15').all()
 
     session.close()
 
